@@ -46,7 +46,3 @@ def preds():
     preds = preds.join(trial.set_index(preds.index))
 
     preds.to_csv('Direction_Preds.csv')
-
-
-# alpha_vantage(api_key='C98CEUQBPZ9L15IV')
-preds()
