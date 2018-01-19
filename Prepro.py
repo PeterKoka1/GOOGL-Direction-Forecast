@@ -164,12 +164,11 @@ def finaldf():
     filename = 'GOOGL-Final.csv'
     try:
         finaldf = pd.DataFrame(pd.concat([lags, techs, googl, jc], axis=1))
-        print(finaldf.shape)
+        ogs = finaldf.shape
         finaldf.dropna(axis=0, inplace=True)
-        print(finaldf.shape)
-
+        ups = finaldf.shape
+        print('{} data points lost'.format(ogs[0]-ups[0]))
         finaldf.to_csv('{}'.format(filename))
         print('{} successfully saved!'.format(filename))
     except:
         print('Unable to save {}'.format(filename))
-        
