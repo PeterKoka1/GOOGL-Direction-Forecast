@@ -154,17 +154,22 @@ def aggregateSP500():
 def finaldf():
 
     lags = pd.read_csv('GOOGL-lags.csv')
-    techs = pd.read_csv('GOOGL-techs.csv').set_index(['Unnamed: 0'], inplace=True)
+    techs = pd.read_csv('GOOGL-techs.csv').set_index(['Unnamed: 0'])
     techs.index.names = ['Date']
     techs = techs.iloc[0:3378]
-
+    techs.reset_index(inplace=True)
     jc = pd.read_csv('JoinedCloses01_18.csv')
     googl = pd.read_csv('GOOGL.csv')
 
     filename = 'GOOGL-Final.csv'
     try:
         finaldf = pd.DataFrame(pd.concat([lags, techs, googl, jc], axis=1))
+        print(finaldf.shape)
+        finaldf.dropna(axis=0, inplace=True)
+        print(finaldf.shape)
+
         finaldf.to_csv('{}'.format(filename))
         print('{} successfully saved!'.format(filename))
     except:
         print('Unable to save {}'.format(filename))
+        
