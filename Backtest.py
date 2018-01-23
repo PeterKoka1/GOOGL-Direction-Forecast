@@ -23,5 +23,3 @@ def back_test():
         print("'Returns.csv' successfully saved!")
     except:
         print("Unable to save csv.")
-
-back_test()
