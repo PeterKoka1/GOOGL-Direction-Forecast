@@ -19,7 +19,7 @@ plt.goog <- function(dat) {
   plot(dat$close[100:600], type = "l", xlab = "600 Indexed Days", ylab = "Closing Prices USD", col = "darkblue")
   lines(dat$SMA[100:600], type = "l", col = "darkgray")
   lines(dat$EMA[100:600], type = "l", col = "red")
-  legend("topleft", legend=c("$GOOG", "SMA", "EMA"),
+  legend("topleft", legend=c("$GOOGL", "SMA", "EMA"),
          col=c("darkblue","darkgray", "red"), lty=c(1,1,1), lwd=c(1.5,1.5,1.5), cex=0.8)
 }
 plt.goog(preds)
@@ -99,7 +99,6 @@ svm.acc <- function(fit) {
 }
 svm.acc(svm.fit) #61.07% accuracy
 
-
 ###################
 #### ALT. PCA #####
 ###################
@@ -132,7 +131,7 @@ mean(glm.pred == dir) #69.48%
 
 ###: TEST/TRAIN SPLIT
 train <- principals[1:2671,]
-test <- principals[2672:3339,]
+test <- principals[2672:3339,] # 2015-05-27 to 2018-01-18 == 2y8mo
 test.dir <- dir[2672:3339]
 
 frmla <- dir ~ PC5+PC1.1+PC2.1+PC4.1+PC5.1+PC7.1+PC1.2+PC2.2+PC3.2+PC4.2
@@ -170,8 +169,8 @@ svm.acc <- function(fit) {
   svm.preds <- predict(svm.fit, newdata = test)
   table(svm.preds,test.Direction)  
   sprintf("SVM: %f", mean(svm.preds == test.dir))
+  return(svm.preds)
 }
-svm.acc(svm.fit) #70%
 
 name1 <- "totaldf.csv";name2 <- "train.csv"; name3 <- "test.csv"
 export.csvs <- function(name1, name2, name3) {
@@ -179,4 +178,38 @@ export.csvs <- function(name1, name2, name3) {
   write.csv(preds.train, name2)
   write.csv(preds.test, name3) 
 }
-export.csvs(name1, name2, name3)
+
+library(quantmod);library(tseries)
+final.preds <- svm.acc(svm.fit) #70%
+export <- rep(1, length(final.preds))
+for (i in 1:length(final.preds)) {
+  if (final.preds[i] == 'False') {
+    export[i] = 0
+  }
+}
+GOOGL.close <- preds$close[2672:3339]
+export.final <- function(col1, col2, filename) {
+  write.csv(data.frame(col1,col2,Delt(GOOGL.close, k = 1, type = "arithmetic")), filename)
+}
+name <- 'final.csv'
+export.final(export, GOOGL.close, name)
+
+read.CR <- function(path) {
+  cum.rets <- read.csv(path, header = TRUE)
+}
+cum.rets <- na.omit(read.CR(path = 'Returns.csv'))[,2:3]
+
+par(mfrow=c(1,1))
+plot(cum.rets$cum_rets, type = "l", col = "darkblue", ylab = "$GOOGL SVM Portfolio Returns", xlab = "2015-05-27 to 2018-01-18")
+(cum.rets$cum_rets[667]) * 100
+# 30.55% return
+
+plot(cumsum(cum.rets$daily_rets), type = "l", col = "darkgray", ylab = "Returns", xlab = "2015-05-27 to 2018-01-18")
+lines(cum.rets$cum_rets, type = "l", col = "darkblue")
+legend("topleft", legend=c("$GOOGL", "SVM Portfolio"),
+       col=c("darkgray","darkblue"), lty=c(1,1), lwd=c(1.5), cex=0.8)
+
+sharpe(cum.rets$cum_rets, r = 0) # 0.704
+sharpe(cumsum(cum.rets$daily_rets), r = 0) # 1.327
+maxdrawdown(cum.rets$cum_rets)$maxdrawdown * 100 # 12.82%
+maxdrawdown(cumsum(cum.rets$daily_rets))$maxdrawdown * 100 # 14.04%
