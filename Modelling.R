@@ -6,6 +6,13 @@ dir <- df$dir
 dropcols <- c('X','Date','close.1','dir','Date.1','Date.2','Date.3')
 preds <- df[, !(names(df) %in% dropcols)]
 
+par(mfrow=c(1,1))
+plot(preds$close[100:600], type = "l", xlab = "600 Indexed Days", ylab = "Closing Prices USD", col = "darkblue")
+lines(preds$SMA[100:600], type = "l", col = "darkgray")
+lines(preds$EMA[100:600], type = "l", col = "red")
+legend("topleft", legend=c("$GOOG", "SMA", "EMA"),
+       col=c("darkblue","darkgray", "red"), lty=c(1,1,1), lwd=c(1.5,1.5,1.5), cex=0.8)
+
 pr.out <- prcomp(preds, scale = TRUE)
 pr.var <- pr.out$sdev^2
 PVE <- pr.var / sum(pr.var)
@@ -18,15 +25,15 @@ cum # 85% of variance explained with 7 Principal Components
 
 pve <- 100 * pr.out$sdev^2 / sum(pr.out$sdev^2)
 par(mfrow = c(1,2))
-plot(pve, type = "o", ylab = "PVE", xlab = "Principal Component",
-     col = "darkblue")
-plot(cumsum(pve), type = "o", ylab = "Cumulative PVE", xlab = "Principal Component",
-     col = "darkgray")
+plot(pve[1:20], type = "o", ylab = "Proportion of Variance Explained", xlab = "",col = "darkgray")
+points(7, pve[7], pch=19, col = "darkblue")
+plot(cumsum(pve)[1:20], type = "o", ylab = "Cumulative PVE", xlab = "", col = "darkgray")
+points(7, cumsum(pve)[7], pch=19, col = "darkblue")
 
 pcepreds <- data.frame(-pr.out$x[,1:7],dir)
 attach(pcepreds)
 glm.fit <- glm(
-  dir ~., family="binomial", data=pcepreds
+  dir ~., family="binomial", data=rets
 )
 summary(glm.fit)
 summary(glm.fit)$coef[,4]
@@ -36,8 +43,7 @@ glm.pred[glm.probs>.5] <- "True"
 table(glm.pred,dir)
 mean(glm.pred==dir) #60.2% TP Rate
 
-##: t-kna vs PCA
-
+###: TEST/TRAIN SPLIT
 pcepreds <- data.frame(-pr.out$x[,1:7],dir)
 preds.train <- pcepreds[1:2671,]
 preds.test <- pcepreds[2672:3339,]
@@ -60,50 +66,25 @@ library(MASS)
 qda.fit <- qda(dir ~ PC2 + PC5 + PC6 + PC7, data=preds.train)
 qda.class <- predict(qda.fit, newdata = preds.test)$class
 table(qda.class, test.Direction)
-qda.missclassError <- mean(qda.class != test.Direction) # 52.71% accuracy
+qda.missclassError <- mean(qda.class != test.Direction) # 38.92% error
 1 - qda.missclassError #61.07% accuracy
-
-###: RANDOM FOREST
-fmla = dir ~.
-library(randomForest)
-?randomForest
-fit.rf = randomForest(fmla, data=pcepreds)
-print(fit.rf)
-importance(fit.rf)
-plot(fit.rf)
-plot( importance(fit.rf), lty=2, pch=16)
-lines(importance(fit.rf))
-imp = importance(fit.rf)
-impvar = rownames(imp)[order(imp[, 1], decreasing=TRUE)]
-op = par(mfrow=c(1, 3))
-for (i in seq_along(impvar)) {
-  partialPlot(fit.rf, pcepreds, impvar[i], xlab=impvar[i],
-              main=paste("Partial Dependence on", impvar[i]),
-              ylim=c(0, 1))
-}
-
 
 ###: SUPPORT VECTOR MACHINE
 library(e1071)
 attach(pcepreds)
-tune.out.rad <- tune(svm, dir ~., data = pcepreds, kernel = "radial", ranges = list(c(0.01, 0.1, 1, 10, 100, 100), 
+tune.out.rad <- tune(svm, dir ~ ., data = pcepreds, kernel = "radial", ranges = list(c(0.01, 0.1, 1, 10, 100, 100), 
                                                                                         gamma = c(0.1, 0.5, 1, 5)))
 summary(tune.out.rad)
 
-tune.out.poly <- tune(svm, dir ~., data = preds, kernel = "polynomial", ranges = list(c(0.001, 0.01, 0.1, 1, 10, 100, 100, 1000), 
-                                                                                             gamma = c(0.1, 0.5, 1, 5, 50, 500, 5000)))
-summary(tune.out.poly)
+# 10-fold CV
+# best parameters: Var: 0.01, gamma: 0.1
+# best performance: 0.3944274
 
-svm.fit <- svm(as.factor(dir.change) ~., data = preds, kernel = "linear", cost = 0.1)
-preds <- predict(svm.fit, data = preds.test)
-?tune
-?svm
-plot(svm.fit, dir.change) # all observations classified to one class
+svm.fit <- svm(dir ~., data = preds.train, kernel = "radial", cost = 0.1, gamma = 0.1)
+svm.preds <- predict(svm.fit, newdata = preds.test)
+mean(svm.preds == test.Direction) # 61.07% accuracy
+table(svm.preds,test.Direction)
 
-svm.rad <- svm(as.factor(y) ~., data = dat, kernel = "radial", gamma = 1, cost = 0.1)
-preds <- predict(svm.rad, data = dat)
-par(mfrow=c(1,1))
-plot(svm.rad, dat)
-plot(dat[preds == 1, "x1"], dat[preds == 1, "x2"], col = "darkblue")
-points(dat[preds == 0, "x1"], dat[preds == 0, "x2"], col = "red")
-
+write.csv(pcepreds, "totaldf.csv")
+write.csv(preds.train, "train.csv")
+write.csv(preds.test, "test.csv")
