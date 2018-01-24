@@ -83,7 +83,7 @@ def preds(api_key):
 
     preds = preds.join(df['volume'])
     preds = preds.join(df['close'])
-    preds['dir'] = (preds['close'] > preds['close'].shift(1)).shift(1)
+    preds['dir'] = (preds['close'] > preds['close'].shift(1)).shift(-1)
 
     filename = 'GOOGL-lags.csv'
     try:
