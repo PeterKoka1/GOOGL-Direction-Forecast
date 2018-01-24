@@ -42,7 +42,7 @@ frmla <- as.formula(paste("dir.1.2700. ~",relevant.x))
 
 glm.fit <- glm(frmla, data = preds.train, family = "binomial")
 log.acc <- function(fit) {
-  fitted.model.probs <- predict(fit, newdata = preds.test, type = "response")
+  fitted.model.probs <- predict(glm.fit, newdata = preds.test, type = "response")
   glm.preds <- rep('False', length(test.dir))
   glm.preds[fitted.model.probs > 0.5] = 'True'
   print(table(glm.preds, test.dir))
@@ -80,7 +80,7 @@ svm.acc <- function() {
   sprintf("%f accuracy", mean(svm.preds==test.dir))  
   return(svm.preds)
 }
-svm.acc() #54.2% accuracy
+svm.acc() #54.2% accuracy - classifies all into True
 
 #####################
 ### PCA Version 1 ###
@@ -255,10 +255,10 @@ svm.acc <- function(fit) {
 }
 
 library(quantmod);library(tseries)
-final.preds1 <- svm.acc() 
+final.preds1 <- svm.preds 
 export1 <- rep(1, length(final.preds1))
-for (i in 1:length(final.preds)) {
-  if (final.preds[i] == 'False') {
+for (i in 1:length(final.preds1)) {
+  if (final.preds1[i] == 'False') {
     export1[i] = -1
   }
 }
@@ -276,33 +276,35 @@ for (i in 1:length(final.preds3)) {
     export3[i] = -1
   }
 }
-GOOGL.close <- preds$close[2701:3338]
+GOOGL.close <- preds$close[2701:3337]
 export.final <- function(col1, col2, col3, col4, filename) {
   write.csv(data.frame(col1,col2,col3,col4,Delt(GOOGL.close, k = 1, type = "arithmetic")), filename)
 }
 name <- 'final.csv'
-export.final(export1, export2, export3, GOOGL.close, name)
+export.final(export1, export2[1:637], export3[1:637], GOOGL.close, name)
 
 read.CR <- function(path) {
   cum.rets <- read.csv(path, header = TRUE)
 }
+
 cum.rets <- na.omit(read.CR(path = 'Returns.csv'))[2:5]
 par(mfrow=c(1,1))
 plot(cum.rets$SVM, type = "l", col = "darkblue", ylab = "$GOOGL Direction Forecast Portfolios", xlab = "2015-07-08 to 2018-01-16")
 (cum.rets$SVM[636]) * 100
-# 430.3391% return
+# 79.867% return
 
-plot(cum.rets$SVM[1:200], type = "l", col = "darkblue", ylab = "Returns", xlab = "First 200 Days")
-lines(cumsum(cum.rets$daily_rets)[1:200], type = "l", col = "darkgray")
-lines(cum.rets$QDA[1:200], type = "l", col = "red")
-lines(cum.rets$LogReg[1:200], type = "l", col = "blue")
+par(mfrow=c(1,1))
+plot(cum.rets$SVM, type = "l", col = "darkblue", ylab = "Returns", xlab = "First 200 Days")
+lines(cum.rets$daily_rets, type = "l", col = "darkgray")
+lines(cum.rets$QDA, type = "l", col = "red")
+lines(cum.rets$LogReg, type = "l", col = "blue")
 legend("topleft", legend=c("SVM","QDA","Log Reg","$GOOGL"),
        col=c("darkblue","darkgray","red","blue"), lty=c(1,1,1,1), lwd=1.5, cex=0.8)
 
-sharpe(cum.rets$SVM, r = 0) # 8.56
-sharpe(cum.rets$QDA, r = 0) # 1.38
-sharpe(cum.rets$LogReg, r = 0) # 1.557
-maxdrawdown(cum.rets$SVM)$maxdrawdown * 100 # 4.28%
+sharpe(cum.rets$SVM, r = 0) # 2.24
+sharpe(cum.rets$QDA, r = 0) # 1.37
+sharpe(cum.rets$LogReg, r = 0) # 1.54
+maxdrawdown(cum.rets$SVM)$maxdrawdown * 100 # 39.31%
 maxdrawdown(cum.rets$QDA)$maxdrawdown * 100 # 14.6%
-maxdrawdown(cum.rets$LogReg)$maxdrawdown * 100 # 14.6%
-maxdrawdown(cumsum(cum.rets$daily_rets))$maxdrawdown * 100 # 14.04%
+maxdrawdown(cum.rets$LogReg)$maxdrawdown * 100 # 14.59%
+maxdrawdown(cum.rets$daily_rets)$maxdrawdown * 100 # 14.04%
