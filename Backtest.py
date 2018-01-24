@@ -26,11 +26,12 @@ def back_test():
         str(df['cum_rets_qda'][636] * 100)[0:5]) + "%"
           )
     try:
-        final_preds = pd.DataFrame(df['daily_rets'])
+        final_preds = pd.DataFrame(df['daily_rets'].cumsum())
         final_preds['SVM'] = df['cum_rets_svm']
         final_preds['QDA'] = df['cum_rets_qda']
         final_preds['LogReg'] = df['cum_rets_lr']
         final_preds.to_csv('Returns.csv')
+        print(final_preds.head(10))
         print("'Returns.csv' successfully saved!")
     except:
         print("Unable to save csv.")
