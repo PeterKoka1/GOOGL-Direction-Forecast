@@ -7,6 +7,7 @@ get.csv <- function(path, csv) {
 }
 df <- get.csv(path, filename)
 date.col <- df['Date']
+date.col[dim(date.col)[1],]
 dir <- df$dir
 dropcols <- c('X','Date','close.1','dir','Date.1','Date.2','Date.3')
 preds <- df[, !(names(df) %in% dropcols)]
@@ -20,7 +21,7 @@ plt.goog <- function(dat) {
   lines(dat$SMA[100:600], type = "l", col = "darkgray")
   lines(dat$EMA[100:600], type = "l", col = "red")
   legend("topleft", legend=c("$GOOGL", "SMA", "EMA"),
-         col=c("darkblue","darkgray", "red"), lty=c(1,1,1), lwd=c(1.5,1.5,1.5), cex=0.8)
+         col=c("darkblue","darkgray", "red"), lty=c(1,1,1), lwd=c(1.5,1.5,1.5), cex=1)
 }
 plt.goog(preds)
 
@@ -49,7 +50,7 @@ log.acc <- function(fit) {
   log.missclassError <- mean(glm.preds != test.dir)
   sprintf("%f accuracy", (1 - log.missclassError)) 
 }
-log.acc(glm.fit) #54.7% accuracy
+log.acc(glm.fit)
 
 ###: QUADRATIC DISCRIMINANT ANALYSIS
 library(MASS)
@@ -60,7 +61,7 @@ qda.acc <- function(fit) {
   qda.missclassError <- mean(qda.class != test.dir) 
   sprintf("%f accuracy", (1 - qda.missclassError))   
 }
-qda.acc(qda.fit) #54.5% accuracy
+qda.acc(qda.fit)
 
 ###: SUPPORT VECTOR MACHINE
 library(e1071)
@@ -80,7 +81,7 @@ svm.acc <- function() {
   sprintf("%f accuracy", mean(svm.preds==test.dir))  
   return(svm.preds)
 }
-svm.acc() #54.2% accuracy - classifies all into True
+svm.acc() 
 
 #####################
 ### PCA Version 1 ###
@@ -89,7 +90,6 @@ svm.acc() #54.2% accuracy - classifies all into True
 pr.out <- prcomp(preds, scale = TRUE)
 pr.var <- pr.out$sdev^2
 PVE <- pr.var / sum(pr.var)
-PVE[1:7] # [1] 0.51780896 0.14742143 0.06471981 0.04605081 0.03212617 0.02244850 0.01945683
 cum <- 0.0
 for (i in 1:7) {
   cum <- cum + PVE[i]
@@ -125,7 +125,7 @@ log.acc <- function(fit) {
   log.missclassError <- mean(glm.preds != test.Direction)
   sprintf("%f accuracy", (1 - log.missclassError)) 
 }
-log.acc(glm.fit) #50.8% accuracy
+log.acc(glm.fit)
 
 ###: QUADRATIC DISCRIMINANT ANALYSIS
 library(MASS)
@@ -136,7 +136,7 @@ qda.acc <- function(fit) {
   qda.missclassError <- mean(qda.class != test.Direction) 
   sprintf("%f accuracy", (1 - qda.missclassError))  
 }
-qda.acc(qda.fit) #50.5% accuracy
+qda.acc(qda.fit)
 
 ###: SUPPORT VECTOR MACHINE
 library(e1071)
@@ -154,7 +154,7 @@ svm.acc <- function(fit) {
   print(table(svm.preds,test.Direction))
   sprintf("%f accuracy", mean(svm.preds==test.Direction))  
 }
-svm.acc(svm.fit) #50% accuracy
+svm.acc(svm.fit)
 
 ###################
 #### ALT. PCA #####
@@ -177,27 +177,11 @@ alternative.pca <- function() {
   return(principals)
 }
 principals <- alternative.pca()
+testerr <- data.frame(principals[2:3338,1:18])
+for (name in names(principals)[1:18]) {
+  testerr[,name] <- diff(principals[,name], lag = 1, differences = 1)
+}
 
-testerr <- data.frame(
-  diff(principals$PC1, lag = 1, differences = 1),
-  diff(principals$PC2, lag = 1, differences = 1),
-  diff(principals$PC3, lag = 1, differences = 1),
-  diff(principals$PC4, lag = 1, differences = 1),
-  diff(principals$PC5, lag = 1, differences = 1),
-  diff(principals$PC6, lag = 1, differences = 1),
-  diff(principals$PC7, lag = 1, differences = 1),
-  diff(principals$PC1.1, lag = 1, differences = 1),
-  diff(principals$PC2.1, lag = 1, differences = 1),
-  diff(principals$PC3.1, lag = 1, differences = 1),
-  diff(principals$PC4.1, lag = 1, differences = 1),
-  diff(principals$PC5.1, lag = 1, differences = 1),
-  diff(principals$PC6.1, lag = 1, differences = 1),
-  diff(principals$PC7.1, lag = 1, differences = 1),
-  diff(principals$PC1.2, lag = 1, differences = 1),
-  diff(principals$PC2.2, lag = 1, differences = 1),
-  diff(principals$PC3.2, lag = 1, differences = 1),
-  diff(principals$PC4.2, lag = 1, differences = 1)
-)
 principalC <- data.frame(na.omit(testerr), principals$dir[2:length(principals$dir)])
 
 colnames(principalC) <- c("PC1","PC2","PC3","PC4","PC5","PC6","PC7","PC8",
@@ -209,7 +193,7 @@ summary(glm.fit)
 glm.probs <- predict(glm.fit, type = "response")
 glm.pred <- rep("False", length(glm.probs))
 glm.pred[glm.probs>0.5] <- "True"
-mean(glm.pred == principalC$dir) #55%
+mean(glm.pred == principalC$dir) 
 
 ###: TEST/TRAIN SPLIT
 dim(principalC)
@@ -234,7 +218,7 @@ log.qda.fits <- function(frmla) {
   qda.missclassError <- mean(qda.class != test.dir)
   sprintf("Log Reg: %f, QDA: %f", 1 - log.missclassError, 1 - qda.missclassError)
 }
-log.qda.fits(frmla) #"Log Reg: 0.54.4, QDA: 0.53"
+log.qda.fits(frmla)
 
 ###: SUPPORT VECTOR MACHINE
 tune.svm <- function(frlma) {
@@ -250,7 +234,7 @@ svm.fit <- svm(frmla, data = train, kernel = "radial", cost = 1, gamma = 1)
 svm.acc <- function(fit) {
   svm.preds <- predict(svm.fit, newdata = test)
   table(svm.preds,test.dir)  
-  sprintf("SVM: %f", mean(svm.preds == test.dir)) #53.2%
+  sprintf("SVM: %f", mean(svm.preds == test.dir))
   return(svm.preds)
 }
 
@@ -291,10 +275,9 @@ cum.rets <- na.omit(read.CR(path = 'Returns.csv'))[2:5]
 par(mfrow=c(1,1))
 plot(cum.rets$SVM, type = "l", col = "darkblue", ylab = "$GOOGL Direction Forecast Portfolios", xlab = "2015-07-08 to 2018-01-16")
 (cum.rets$SVM[636]) * 100
-# 79.867% return
 
 par(mfrow=c(1,1))
-plot(cum.rets$SVM, type = "l", col = "darkblue", ylab = "Returns", xlab = "First 200 Days")
+plot(cum.rets$SVM, type = "l", col = "darkblue", ylab = "Returns", xlab = "2015/07 - 2018/01")
 lines(cum.rets$daily_rets, type = "l", col = "darkgray")
 lines(cum.rets$QDA, type = "l", col = "red")
 lines(cum.rets$LogReg, type = "l", col = "blue")
