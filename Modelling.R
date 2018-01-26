@@ -14,6 +14,7 @@ preds <- df[, !(names(df) %in% dropcols)]
 first <- preds[,1:7]
 signals <- preds[,8:30]
 stocks <- preds[,31:429]
+dim(df)
 
 plt.goog <- function(dat) {
   par(mfrow=c(1,1))
@@ -98,13 +99,14 @@ cum # 85% of variance explained with 7 Principal Components
 
 pcaplots <- function() {
   pve <- 100 * pr.out$sdev^2 / sum(pr.out$sdev^2)
-  par(mfrow = c(1,2))
-  plot(pve[1:20], type = "o", ylab = "Proportion of Variance Explained", xlab = "",col = "darkgray")
+  par(mfrow = c(2,1))
+  plot(pve[1:20], type = "o", ylab = "PVE", xlab = "",col = "darkgray")
   points(7, pve[7], pch=19, col = "darkblue")
   plot(cumsum(pve)[1:20], type = "o", ylab = "Cumulative PVE", xlab = "", col = "darkgray")
   points(7, cumsum(pve)[7], pch=19, col = "darkblue")  
 }
 pcaplots()
+names(df)
 
 ###: TEST/TRAIN SPLIT
 pcepreds <- data.frame(-pr.out$x[,1:7],dir)
@@ -275,6 +277,7 @@ cum.rets <- na.omit(read.CR(path = 'Returns.csv'))[2:5]
 par(mfrow=c(1,1))
 plot(cum.rets$SVM, type = "l", col = "darkblue", ylab = "$GOOGL Direction Forecast Portfolios", xlab = "2015-07-08 to 2018-01-16")
 (cum.rets$SVM[636]) * 100
+(cum.rets$daily_rets[636]) * 100
 
 par(mfrow=c(1,1))
 plot(cum.rets$SVM, type = "l", col = "darkblue", ylab = "Returns", xlab = "2015/07 - 2018/01")
@@ -287,6 +290,7 @@ legend("topleft", legend=c("SVM","QDA","Log Reg","$GOOGL"),
 sharpe(cum.rets$SVM, r = 0) # 2.24
 sharpe(cum.rets$QDA, r = 0) # 1.37
 sharpe(cum.rets$LogReg, r = 0) # 1.54
+sharpe(cum.rets$daily_rets, r = 0) # 1.39
 maxdrawdown(cum.rets$SVM)$maxdrawdown * 100 # 39.31%
 maxdrawdown(cum.rets$QDA)$maxdrawdown * 100 # 14.6%
 maxdrawdown(cum.rets$LogReg)$maxdrawdown * 100 # 14.59%
