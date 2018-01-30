@@ -170,5 +170,5 @@ def finaldf():
         print('{} data points lost'.format(ogs[0]-ups[0]))
         finaldf.to_csv('{}'.format(filename))
         print('{} successfully saved!'.format(filename))
-    except:
+    except: 
         print('Unable to save {}'.format(filename))
