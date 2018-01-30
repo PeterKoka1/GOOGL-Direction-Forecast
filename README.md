@@ -2,6 +2,6 @@
 
 An outline of the math, modelling, preprocessing, and results can be found in the pdf below.
 
-https://github.com/PeterKoka1/StatArb-FOX-and-FOXA/blob/master/FOX-FOXAReport.pdf
+https://github.com/PeterKoka1/GOOGL-Direction-Forecast/blob/master/GOOGL_Price_Direction.pdf
 
 Peter Kokalov
